@@ -1,4 +1,4 @@
-name: Daily Shopify Review Scraper
+pythonname: Daily Shopify Review Scraper
 
 on:
   schedule:
@@ -24,4 +24,4 @@ jobs:
 
     - name: Run the script
       run: |
-        shopify_reviews_2.py
+        python shopify_reviews_2.py
