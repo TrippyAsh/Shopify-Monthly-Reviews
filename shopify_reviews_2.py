@@ -16,8 +16,14 @@ from pydrive2.drive import GoogleDrive
 # Authenticate using service account
 def authenticate_drive():
     credentials_path = 'credentials.json'
+    # Check if the environment variable is set
+    gdrive_credentials_json = os.getenv('GDRIVE_CREDENTIALS_JSON')
+    if not gdrive_credentials_json:
+        raise ValueError("GDRIVE_CREDENTIALS_JSON environment variable not set. Cannot authenticate Google Drive.")
+
     with open(credentials_path, 'w') as f:
-        f.write(os.getenv('GDRIVE_CREDENTIALS_JSON'))
+        f.write(gdrive_credentials_json)
+    
     gauth = GoogleAuth()
     gauth.LoadCredentialsFile(credentials_path)
     gauth.ServiceAuth()
@@ -25,18 +31,25 @@ def authenticate_drive():
 
 # Upload CSV to a specific Google Drive folder
 def upload_to_drive(local_path, file_name, folder_id):
-    drive = authenticate_drive()
-    file = drive.CreateFile({'title': file_name, 'parents': [{'id': folder_id}]})
-    file.SetContentFile(local_path)
-    file.Upload()
-    print(f"✅ Uploaded to Google Drive: {file_name}")
+    try:
+        drive = authenticate_drive()
+        file = drive.CreateFile({'title': file_name, 'parents': [{'id': folder_id}]})
+        file.SetContentFile(local_path)
+        file.Upload()
+        print(f"✅ Uploaded to Google Drive: {file_name}")
+    except Exception as e:
+        print(f"❌ Failed to upload {file_name} to Google Drive: {e}")
+    finally:
+        # Clean up the credentials file after use
+        if os.path.exists('credentials.json'):
+            os.remove('credentials.json')
 
 # REPLACE this with your actual folder ID
 DRIVE_FOLDER_ID = "15gVrByonzFvBMGxJ4NUvVXzCgEUVB1Se"
 
 """
-
 # Combined logic to scrape Single app review page or the Developer page and save the data to  Google Drive.
+"""
 
 # 📅 Date Configuration
 start_date = datetime.today() # Collects reviews up to today
@@ -135,6 +148,7 @@ def parse_review_date(date_str):
     try:
         return datetime.strptime(date_str, '%B %d, %Y')
     except ValueError:
+        print(f"⚠️ Could not parse date string: '{date_str}'. Returning None.")
         return None
 
 # 🧠 Function: Fetch Reviews
@@ -271,20 +285,17 @@ def fetch_reviews(app_url, app_name, start_date, end_date):
                 else:
                     # If the review is older than the end_date, stop fetching for this app.
                     print(f"🛑 Review too old: {review_date_str}. Stopping for {app_name}.")
-                    break # Break out of the inner for loop
+                    break # Break out of the inner for loop (reviews on current page)
             else:
-                print(f"⚠️ Could not parse date for review: '{review_date_str}'. Skipping.")
-                continue # Skip this review if its date can't be parsed.
+                # parse_review_date already prints a warning. Continue to next review.
+                continue
 
         # Logic to determine if we should stop fetching pages.
-        # If no recent reviews were found on the current page (and it's not the first page),
-        # or if an old review caused the inner loop to break, stop.
-        if not has_recent_reviews_on_page and page > 1:
+        # If the inner loop broke because a review was too old, or no relevant reviews were found
+        # on the current page (and it's not the first page), stop.
+        if (reviews and review_date and review_date < end_date) or \
+           (not has_recent_reviews_on_page and page > 1):
             print(f'✅ All relevant reviews collected for {app_name}, or no new reviews found in the date range on this page.')
-            break
-
-        # If the inner loop broke because a review was too old, break the outer loop as well.
-        if reviews and review_date and review_date < end_date:
             break
 
         page += 1
@@ -327,7 +338,10 @@ def main():
 
         elif len(path_segments) >= 1 and (len(path_segments) == 1 or (len(path_segments) >= 2 and path_segments[-1] == 'reviews')):
             print("Detected single app URL.")
+            # Determine app handle: if last segment is 'reviews', then the handle is the one before it.
+            # Otherwise, it's the first (and only) segment.
             app_handle = path_segments[0] if path_segments[-1] != 'reviews' else path_segments[-2]
+            
             if not app_handle:
                 print(f"❌ Could not parse app name from URL: {input_url}. Skipping.")
                 continue
@@ -363,7 +377,6 @@ def main():
             # Save the DataFrame to a CSV file and upload to Google Drive
             df.to_csv(file_name, index=False, encoding='utf-8')
             upload_to_drive(file_name, file_name, DRIVE_FOLDER_ID)
-
 
             print(f"✅ Data saved to: {file_name}")
         else:
