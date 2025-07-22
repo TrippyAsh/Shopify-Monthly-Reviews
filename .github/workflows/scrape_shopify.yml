@@ -37,10 +37,10 @@ jobs:
 
       - name: Setup PyDrive2 credentials
         run: |
-          mkdir -p ~/.config/pydrive
-          echo "${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}" > ~/.config/pydrive/credentials.json
-        env:
-          GDRIVE_SERVICE_ACCOUNT_KEY: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}
+        mkdir -p ~/.config/pydrive
+        cat <<EOF > ~/.config/pydrive/credentials.json
+    ${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}
+    EOF
 
       - name: Upload CSV to Google Drive
         run: |
