@@ -37,10 +37,10 @@ jobs:
 
       - name: Setup PyDrive2 credentials
         run: |
-        mkdir -p ~/.config/pydrive
-        cat <<EOF > ~/.config/pydrive/credentials.json
-    ${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}
-    EOF
+          mkdir -p ~/.config/pydrive
+          cat <<EOF > ~/.config/pydrive/credentials.json
+${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}
+EOF
 
       - name: Upload CSV to Google Drive
         run: |
@@ -80,9 +80,5 @@ else:
     })
     file_to_upload.SetContentFile(csv_filename)
     file_to_upload.Upload()
-    print(f"Created: {csv_filename}")
-' > upload_to_drive.py
-
-          python upload_to_drive.py
-        env:
-          CSV_FILENAME: ${{ steps.run_script.outputs.csv_file }}
+    print(f"Created: {csv_filename*
+
