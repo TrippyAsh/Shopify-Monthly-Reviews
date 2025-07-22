@@ -38,7 +38,7 @@ jobs:
       - name: Setup PyDrive2 credentials
         run: |
           mkdir -p ~/.config/pydrive
-          echo '${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}' > ~/.config/pydrive/credentials.json
+          echo "${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}" > ~/.config/pydrive/credentials.json
         env:
           GDRIVE_SERVICE_ACCOUNT_KEY: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}
 
