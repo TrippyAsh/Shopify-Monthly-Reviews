@@ -2,16 +2,15 @@ name: Run Shopify Scraper and Upload to Google Drive
 
 on:
   schedule:
-    # Runs every day at 00:00 UTC (which is 5:30 AM IST on the next day)
-    # Adjust as needed. For example, if you want it to run daily at 8:00 AM IST,
-    # that would be 2:30 AM UTC (30 2 * * *).
-    - cron: '0 0 * * *' # Changed back to 0 0 for daily midnight UTC, adjust if 3:30 UTC was preferred.
+    # Runs every day at 00:00 UTC (5:30 AM IST)
+    - cron: '0 0 * * *'
   workflow_dispatch:
-    # Allows you to manually trigger the workflow from the GitHub UI
+    # Allows manual triggering from GitHub UI
 
 jobs:
   scrape_and_upload:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,13 +18,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9' # Or your preferred Python version
+          python-version: '3.9' # Use preferred Python version
 
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          # PyDrive2 is explicitly in requirements.txt now, so this line isn't strictly needed here.
-          # pip install PyDrive2
+          pip install PyDrive2 # Ensure PyDrive2 is installed
 
       - name: Run scraper script and capture filename
         id: run_script
@@ -37,63 +35,59 @@ jobs:
             exit 1
           fi
           echo "Generated CSV: $LATEST_CSV"
-          echo "csv_file=$LATEST_CSV" >> $GITHUB_OUTPUT # Using GITHUB_OUTPUT for next step
+          echo "csv_file=$LATEST_CSV" >> $GITHUB_OUTPUT
+
+      - name: Setup PyDrive2 credentials
+        run: |
+          mkdir -p ~/.config/pydrive
+          echo '${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}' > ~/.config/pydrive/credentials.json
+        env:
+          GDRIVE_SERVICE_ACCOUNT_KEY: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}
 
       - name: Upload CSV to Google Drive
         run: |
-          # Write the Python script to a temporary file to avoid quoting issues
           echo "
 import os
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 
-# Load credentials from the service account JSON file
+# Authenticate using service account credentials
 gauth = GoogleAuth()
-gauth.DEFAULT_SETTINGS['client_config_file'] = os.path.expanduser('~/.config/pydrive/credentials.json')
-gauth.AuthFromServiceAccount() # Use AuthFromServiceAccount for service accounts
-
+gauth.LoadServiceConfigSettings()
+gauth.AuthFromServiceAccount()
 drive = GoogleDrive(gauth)
 
-# The specific Google Drive folder ID where files will be uploaded
 folder_id = '15gVrByonzFvBMGxJ4NUvVXzCgEUVB1Se'
-
-# Get the filename from the GitHub Actions environment variable
 csv_filename = os.getenv('CSV_FILENAME')
 
 if not csv_filename or not os.path.exists(csv_filename):
     print(f'Error: CSV file not found or filename not provided: {csv_filename}')
     exit(1)
 
-print(f'Attempting to upload {csv_filename} to Google Drive folder ID: {folder_id}')
+print(f'Attempting to upload: {csv_filename} to folder ID: {folder_id}')
 
-# List files in the target folder to check for existing file with the same name
+# Check for existing file in the target folder
 file_list = drive.ListFile({'q': f\"'{folder_id}' in parents and trashed=false\"}).GetList()
 existing_file_id = None
 for file_in_drive in file_list:
-    if file_in_drive['title'] == csv_filename: # 'title' is still functional in PyDrive2
+    if file_in_drive['title'] == csv_filename:
         existing_file_id = file_in_drive['id']
         break
 
 if existing_file_id:
-    # Update existing file
-    print(f'Updating existing file: {csv_filename} (ID: {existing_file_id})')
     file_to_upload = drive.CreateFile({'id': existing_file_id})
     file_to_upload.SetContentFile(csv_filename)
     file_to_upload.Upload()
-    print(f'Updated: {csv_filename} successfully.')
+    print(f'Updated existing file: {csv_filename}')
 else:
-    # Create new file
-    print(f'Creating new file: {csv_filename}')
     file_to_upload = drive.CreateFile({
         'title': csv_filename,
         'parents': [{'id': folder_id}]
     })
     file_to_upload.SetContentFile(csv_filename)
     file_to_upload.Upload()
-    print(f'Created: {csv_filename} successfully.')
-          " > upload_to_drive.py # Redirect the Python script content to a file
-          python upload_to_drive.py # Execute the Python file
-
+    print(f'Created new file: {csv_filename}')
+          " > upload_to_drive.py
+          python upload_to_drive.py
         env:
-          # Pass the output from 'run_script' step as an environment variable
           CSV_FILENAME: ${{ steps.run_script.outputs.csv_file }}
