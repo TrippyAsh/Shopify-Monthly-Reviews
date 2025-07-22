@@ -2,7 +2,7 @@ name: Run Shopify Scraper and Upload to Google Drive
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # 5:30 AM IST daily
+    - cron: '0 0 * * *'  # Every day at 00:00 UTC / 5:30 AM IST
   workflow_dispatch:
 
 jobs:
@@ -44,8 +44,7 @@ jobs:
 
       - name: Upload CSV to Google Drive
         run: |
-          cat <<EOF > upload_to_drive.py
-import os
+          echo 'import os
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 
@@ -54,35 +53,36 @@ gauth.LoadServiceConfigSettings()
 gauth.AuthFromServiceAccount()
 drive = GoogleDrive(gauth)
 
-folder_id = '15gVrByonzFvBMGxJ4NUvVXzCgEUVB1Se'
-csv_filename = os.getenv('CSV_FILENAME')
+folder_id = "15gVrByonzFvBMGxJ4NUvVXzCgEUVB1Se"
+csv_filename = os.getenv("CSV_FILENAME")
 
 if not csv_filename or not os.path.exists(csv_filename):
-    print(f'Error: CSV file not found or filename not provided: {csv_filename}')
+    print(f"Error: CSV file not found or filename not provided: {csv_filename}")
     exit(1)
 
-print(f'Uploading: {csv_filename} to folder ID: {folder_id}')
-file_list = drive.ListFile({'q': f"'{folder_id}' in parents and trashed=false"}).GetList()
+print(f"Uploading: {csv_filename} to Google Drive folder {folder_id}")
+file_list = drive.ListFile({"q": f"\'{folder_id}\' in parents and trashed=false"}).GetList()
 existing_file_id = None
 for file_in_drive in file_list:
-    if file_in_drive['title'] == csv_filename:
-        existing_file_id = file_in_drive['id']
+    if file_in_drive["title"] == csv_filename:
+        existing_file_id = file_in_drive["id"]
         break
 
 if existing_file_id:
-    file_to_upload = drive.CreateFile({'id': existing_file_id})
+    file_to_upload = drive.CreateFile({"id": existing_file_id})
     file_to_upload.SetContentFile(csv_filename)
     file_to_upload.Upload()
-    print(f'Updated: {csv_filename}')
+    print(f"Updated: {csv_filename}")
 else:
     file_to_upload = drive.CreateFile({
-        'title': csv_filename,
-        'parents': [{'id': folder_id}]
+        "title": csv_filename,
+        "parents": [{"id": folder_id}]
     })
     file_to_upload.SetContentFile(csv_filename)
     file_to_upload.Upload()
-    print(f'Created: {csv_filename}')
-EOF
+    print(f"Created: {csv_filename}")
+' > upload_to_drive.py
+
           python upload_to_drive.py
         env:
           CSV_FILENAME: ${{ steps.run_script.outputs.csv_file }}
