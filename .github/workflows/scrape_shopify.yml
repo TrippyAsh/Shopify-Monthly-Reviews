@@ -1,15 +1,14 @@
 name: Daily Shopify Review Scraper
 
-# Run daily at 9:00 AM IST (which is 3:30 AM UTC)
 on:
+  # Run daily at 9:00 AM IST (which is 3:30 AM UTC)
   schedule:
     - cron: '30 3 * * *'
-  workflow_dispatch:  # allows you to run it manually too
+  workflow_dispatch: # allows you to run it manually too
 
 jobs:
   run-scraper:
     runs-on: ubuntu-latest
-
     steps:
       - name: Clone the repository
         uses: actions/checkout@v3
@@ -24,5 +23,8 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Shopify scraper script
+        env:
+          # THIS IS THE MISSING PART: Pass the secret as an environment variable
+          GDRIVE_CREDENTIALS_JSON: ${{ secrets.GDRIVE_CREDENTIALS_JSON }}
         run: |
           python shopify_reviews_2.py
