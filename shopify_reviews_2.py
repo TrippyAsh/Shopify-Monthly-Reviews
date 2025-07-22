@@ -25,7 +25,8 @@ def authenticate_drive():
         f.write(gdrive_credentials_json)
 
     gauth = GoogleAuth()
-    gauth.LoadCredentialsFile(credentials_path)
+    gauth.settings['get_refresh_token'] = False
+    gauth.LoadServiceConfigFile(credentials_path)
     gauth.ServiceAuth()
     return GoogleDrive(gauth)
 
