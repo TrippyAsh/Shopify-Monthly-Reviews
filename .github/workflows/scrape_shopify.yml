@@ -5,7 +5,7 @@ on:
     # Runs every day at 00:00 UTC (which is 5:30 AM IST on the next day)
     # Adjust as needed. For example, if you want it to run daily at 8:00 AM IST,
     # that would be 2:30 AM UTC (30 2 * * *).
-    - cron: '0 0 * * *'
+    - cron: '30 3 * * *'
   workflow_dispatch:
     # Allows you to manually trigger the workflow from the GitHub UI
 
