@@ -1,4 +1,4 @@
 requests
 beautifulsoup4
 pandas
-pydrive2>=1.15.0  # ✅ Make sure it's recent (1.15.0+ supports LoadServiceConfigFile)
+PyDrive2
