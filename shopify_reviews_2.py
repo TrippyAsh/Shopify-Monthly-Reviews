@@ -18,14 +18,7 @@ end_date = datetime(2017, 1, 1) # Collects reviews from this date onwards (inclu
 
 # 🌐 Shopify URLs (Feel free to add more - can be developer pages or single app pages)
 base_urls = [
-    'https://apps.shopify.com/partners/cedcommerce',
-    'https://apps.shopify.com/partners/tanishqandmac',
-    'https://apps.shopify.com/partners/digital-product-labs',
-    'https://apps.shopify.com/partners/etsify-io',
-    'https://apps.shopify.com/partners/common-services',
-    'https://apps.shopify.com/partners/ecom-planners2',
     'https://apps.shopify.com/partners/litcommerce1',
-    'https://apps.shopify.com/marketplace-connect/reviews'
 ]
 
 # 🧠 Function: Fetch Apps from Developer Page
