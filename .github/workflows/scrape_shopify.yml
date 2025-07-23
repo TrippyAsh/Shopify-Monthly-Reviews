@@ -42,7 +42,7 @@ jobs:
 
       - name: Upload CSV to Google Drive
         run: |
-          cat <<EOF > upload_to_drive.py
+        cat <<EOF > upload_to_drive.py
 import os
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
