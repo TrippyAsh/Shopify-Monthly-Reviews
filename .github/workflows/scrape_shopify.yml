@@ -35,12 +35,11 @@ jobs:
           echo "Generated CSV: $LATEST_CSV"
           echo "csv_file=$LATEST_CSV" >> $GITHUB_OUTPUT
 
-      - name: Setup PyDrive2 credentials
-        run: |
-          mkdir -p ~/.config/pydrive
-          cat > ~/.config/pydrive/credentials.json <<EOF
-${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}
-EOF
+    - name: Setup PyDrive2 credentials
+      run: |
+        mkdir -p ~/.config/pydrive
+        echo "${{ secrets.GDRIVE_SERVICE_ACCOUNT_KEY }}" > ~/.config/pydrive/credentials.json
+
 
       - name: Upload CSV to Google Drive
         run: |
